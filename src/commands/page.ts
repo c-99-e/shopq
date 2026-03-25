@@ -231,7 +231,7 @@ async function handlePageGet(parsed: ParsedArgs): Promise<void> {
   const handle = parsed.args.join(" ");
   if (!handle) {
     formatError("Usage: misty page get <handle>");
-    process.exitCode = 1;
+    process.exitCode = 2;
     return;
   }
 
@@ -328,7 +328,7 @@ async function handlePageUpdate(parsed: ParsedArgs): Promise<void> {
 
   if (!handle) {
     formatError("Usage: misty page update <handle>");
-    process.exitCode = 1;
+    process.exitCode = 2;
     return;
   }
 

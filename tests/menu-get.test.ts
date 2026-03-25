@@ -158,6 +158,6 @@ describe("misty menu get", () => {
   test("missing argument shows usage error", async () => {
     const { stderr, exitCode } = await run(["menu", "get"]);
     expect(stderr).toContain("Usage");
-    expect(exitCode).toBe(1);
+    expect(exitCode).toBe(2);
   });
 });

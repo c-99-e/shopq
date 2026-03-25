@@ -205,7 +205,7 @@ async function handleProductGet(parsed: ParsedArgs): Promise<void> {
   const idOrTitle = parsed.args.join(" ");
   if (!idOrTitle) {
     formatError("Usage: misty product get <id-or-title>");
-    process.exitCode = 1;
+    process.exitCode = 2;
     return;
   }
 
@@ -492,7 +492,7 @@ async function handleProductUpdate(parsed: ParsedArgs): Promise<void> {
   const idOrTitle = parsed.args.join(" ");
   if (!idOrTitle) {
     formatError("Usage: misty product update <id-or-title> [--title ...] [--status ...] ...");
-    process.exitCode = 1;
+    process.exitCode = 2;
     return;
   }
 
@@ -595,7 +595,7 @@ async function handleProductDelete(parsed: ParsedArgs): Promise<void> {
   const idOrTitle = parsed.args.join(" ");
   if (!idOrTitle) {
     formatError("Usage: misty product delete <id-or-title> [--yes]");
-    process.exitCode = 1;
+    process.exitCode = 2;
     return;
   }
 

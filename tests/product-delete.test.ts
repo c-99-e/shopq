@@ -207,7 +207,7 @@ describe("misty product delete — errors", () => {
 
   test("missing id-or-title exits 1", async () => {
     const { stderr, exitCode } = await run(["product", "delete"]);
-    expect(exitCode).toBe(1);
+    expect(exitCode).toBe(2);
     expect(stderr).toContain("Usage");
   });
 

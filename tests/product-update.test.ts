@@ -217,7 +217,7 @@ describe("misty product update — output", () => {
 describe("misty product update — missing id-or-title", () => {
   test("exits with error when no id-or-title provided", async () => {
     const { stderr, exitCode } = await run(["product", "update"]);
-    expect(exitCode).toBe(1);
+    expect(exitCode).toBe(2);
     expect(stderr).toContain("Usage");
   });
 });

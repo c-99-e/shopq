@@ -269,6 +269,6 @@ describe("misty product get — missing args", () => {
   test("exits with error when no id-or-title provided", async () => {
     const { stderr, exitCode } = await run(["product", "get"]);
     expect(stderr).toContain("Usage");
-    expect(exitCode).toBe(1);
+    expect(exitCode).toBe(2);
   });
 });

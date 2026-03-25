@@ -180,6 +180,6 @@ describe("misty collection get", () => {
   test("no argument shows usage error", async () => {
     const { stderr, exitCode } = await run(["collection", "get"]);
     expect(stderr).toContain("Usage");
-    expect(exitCode).toBe(1);
+    expect(exitCode).toBe(2);
   });
 });

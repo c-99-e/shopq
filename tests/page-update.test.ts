@@ -99,7 +99,7 @@ describe("misty page update — validation", () => {
 
   test("exits with code 1 when handle is missing", async () => {
     const { stderr, exitCode } = await run(["page", "update"]);
-    expect(exitCode).toBe(1);
+    expect(exitCode).toBe(2);
     expect(stderr).toContain("handle");
   });
 

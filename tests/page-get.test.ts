@@ -161,6 +161,6 @@ describe("misty page get — missing args", () => {
   test("exits with error when no handle provided", async () => {
     const { stderr, exitCode } = await run(["page", "get"]);
     expect(stderr).toContain("Usage");
-    expect(exitCode).toBe(1);
+    expect(exitCode).toBe(2);
   });
 });

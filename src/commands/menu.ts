@@ -101,7 +101,7 @@ async function handleMenuGet(parsed: ParsedArgs): Promise<void> {
   const idOrHandle = parsed.args.join(" ");
   if (!idOrHandle) {
     formatError("Usage: misty menu get <id-or-handle>");
-    process.exitCode = 1;
+    process.exitCode = 2;
     return;
   }
 
