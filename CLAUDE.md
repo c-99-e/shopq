@@ -105,20 +105,27 @@ bun --hot ./index.ts
 
 For more information, read the Bun API docs in `node_modules/bun-types/docs/**.mdx`.
 
+## Linear CLI gotchas
+
+- Use `linear issue view <id>` to see details (not `show`)
+- `--no-pager` is only available on `linear issue list`, not other commands
+- Use `--all-states` to include all states (not `--all`)
+- `--sort` is required on `linear issue list` — always pass `--sort priority` or `--sort manual`
+- `--team SAU` is required when directory name doesn't match a team key
+- Example: `linear issue list --project "Mistea" --milestone "v1" --all-states --all-assignees --sort priority --team SAU --no-pager --limit 0`
+
 ## Linear Workflow
 
 When working with Linear tickets or milestones:
 
 ### Single ticket
 1. Fetch details: `linear issue view <id>`
-2. Start work: `linear issue start <id>`
-3. When done: `linear issue update <id> --state completed`
-4. Optionally comment: `linear issue comment <id>`
+2. Start work: `linear issue update <id> --state "In Progress"`
+3. When done: `linear issue update <id> --state "Done"`
+4. Optionally comment: `linear issue comment add <id> --body "message"`
 
 ### Milestone (all tickets)
-1. Find the project: `linear project list` (match name case-insensitively)
-2. List milestones: `linear milestone list --project <projectId>` (match name case-insensitively)
-3. View milestone: `linear milestone view <milestoneId>`
-4. Find issues in the milestone via `linear api` with a GraphQL query filtering by milestone ID
-5. Process each ticket sequentially — start, implement, complete
-6. After all tickets done, summarize: tickets completed, key decisions, any blocked/skipped tickets
+1. List issues: `linear issue list --project "<name>" --milestone "<name>" --all-states --all-assignees --sort priority --team SAU --no-pager --limit 0`
+2. View ticket details: `linear issue view <id>`
+3. Process each ticket sequentially — start, implement, complete
+4. After all tickets done, summarize: tickets completed, key decisions, any blocked/skipped tickets
