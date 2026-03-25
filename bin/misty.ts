@@ -7,6 +7,7 @@ import "../src/commands/product";
 import "../src/commands/menu";
 import "../src/commands/file";
 import "../src/commands/page";
+import "../src/commands/collection";
 import { run } from "../src/cli";
 
 await run(process.argv.slice(2));
