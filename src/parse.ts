@@ -62,6 +62,36 @@ export function parseArgs(argv: string[]): ParsedArgs {
       flags.cursor = argv[i]!;
     } else if (arg?.startsWith("--cursor=")) {
       flags.cursor = arg.slice("--cursor=".length);
+    } else if (arg === "--title") {
+      i++;
+      flags.title = argv[i]!;
+    } else if (arg?.startsWith("--title=")) {
+      flags.title = arg.slice("--title=".length);
+    } else if (arg === "--handle") {
+      i++;
+      flags.handle = argv[i]!;
+    } else if (arg?.startsWith("--handle=")) {
+      flags.handle = arg.slice("--handle=".length);
+    } else if (arg === "--tags") {
+      i++;
+      flags.tags = argv[i]!;
+    } else if (arg?.startsWith("--tags=")) {
+      flags.tags = arg.slice("--tags=".length);
+    } else if (arg === "--description") {
+      i++;
+      flags.description = argv[i]!;
+    } else if (arg?.startsWith("--description=")) {
+      flags.description = arg.slice("--description=".length);
+    } else if (arg === "--variants") {
+      i++;
+      flags.variants = argv[i]!;
+    } else if (arg?.startsWith("--variants=")) {
+      flags.variants = arg.slice("--variants=".length);
+    } else if (arg === "--options") {
+      i++;
+      flags.options = argv[i]!;
+    } else if (arg?.startsWith("--options=")) {
+      flags.options = arg.slice("--options=".length);
     } else if (arg) {
       positional.push(arg);
     }

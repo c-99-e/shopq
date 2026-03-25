@@ -350,6 +350,173 @@ function outputProduct(product: NonNullable<ProductGetResponse["product"]>, pars
   process.stdout.write(lines.join("\n") + "\n");
 }
 
+// --- product create ---
+
+const PRODUCT_CREATE_MUTATION = `mutation ProductCreate($input: ProductInput!) {
+  productCreate(input: $input) {
+    product { id }
+    userErrors { field message }
+  }
+}`;
+
+const PRODUCT_OPTIONS_CREATE_MUTATION = `mutation ProductOptionsCreate($productId: ID!, $options: [OptionCreateInput!]!) {
+  productOptionsCreate(productId: $productId, options: $options) {
+    product { id }
+    userErrors { field message }
+  }
+}`;
+
+const PRODUCT_VARIANTS_BULK_CREATE_MUTATION = `mutation ProductVariantsBulkCreate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+  productVariantsBulkCreate(productId: $productId, variants: $variants) {
+    productVariants { id }
+    userErrors { field message }
+  }
+}`;
+
+const PRODUCT_DELETE_MUTATION = `mutation ProductDelete($input: ProductDeleteInput!) {
+  productDelete(input: $input) {
+    deletedProductId
+    userErrors { field message }
+  }
+}`;
+
+interface UserError {
+  field: string[];
+  message: string;
+}
+
+async function handleProductCreate(parsed: ParsedArgs): Promise<void> {
+  const { flags } = parsed;
+
+  // Validate required flags
+  if (!flags.title) {
+    formatError("Missing required flag: --title");
+    process.exitCode = 2;
+    return;
+  }
+
+  if (flags.variants && !flags.options) {
+    formatError("--options is required when --variants is provided");
+    process.exitCode = 2;
+    return;
+  }
+
+  try {
+    const config = resolveConfig(flags.store);
+    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
+    const client = createClient({ ...config, protocol });
+
+    const status = flags.status ? flags.status.toUpperCase() : "DRAFT";
+
+    const input: Record<string, unknown> = {
+      title: flags.title,
+      status,
+    };
+    if (flags.handle) input.handle = flags.handle;
+    if (flags.type) input.productType = flags.type;
+    if (flags.vendor) input.vendor = flags.vendor;
+    if (flags.tags) input.tags = flags.tags.split(",").map((t) => t.trim());
+    if (flags.description) input.descriptionHtml = flags.description;
+
+    // Step 1: Create product
+    const createResult = await client.query<{
+      productCreate: { product: { id: string } | null; userErrors: UserError[] };
+    }>(PRODUCT_CREATE_MUTATION, { input });
+
+    if (createResult.productCreate.userErrors.length > 0) {
+      formatError(createResult.productCreate.userErrors.map((e) => e.message).join("; "));
+      process.exitCode = 1;
+      return;
+    }
+
+    const productId = createResult.productCreate.product!.id;
+
+    // Single-variant (no --variants) — done
+    if (!flags.variants) {
+      const data = { productId };
+      if (flags.json) {
+        formatOutput(data, [], { json: true, noColor: flags.noColor });
+      } else {
+        process.stdout.write(`Created product: ${productId}\n`);
+      }
+      return;
+    }
+
+    // Multi-variant flow
+    const variantsJson = await Bun.file(flags.variants).json();
+    const optionNames = flags.options!.split(",").map((o) => o.trim());
+
+    // Step 2: Create options
+    const optionsInput = optionNames.map((name) => ({ name, values: [{ name: "Default" }] }));
+    const optionsResult = await client.query<{
+      productOptionsCreate: { product: { id: string } | null; userErrors: UserError[] };
+    }>(PRODUCT_OPTIONS_CREATE_MUTATION, { productId, options: optionsInput });
+
+    if (optionsResult.productOptionsCreate.userErrors.length > 0) {
+      // Rollback
+      await rollbackProduct(client, productId);
+      formatError(
+        `Option creation failed, rollback performed: ${optionsResult.productOptionsCreate.userErrors.map((e) => e.message).join("; ")}`
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    // Step 3: Bulk create variants
+    const variantsResult = await client.query<{
+      productVariantsBulkCreate: {
+        productVariants: Array<{ id: string }> | null;
+        userErrors: UserError[];
+      };
+    }>(PRODUCT_VARIANTS_BULK_CREATE_MUTATION, { productId, variants: variantsJson });
+
+    if (variantsResult.productVariantsBulkCreate.userErrors.length > 0) {
+      // Rollback
+      await rollbackProduct(client, productId);
+      formatError(
+        `Variant creation failed, rollback performed: ${variantsResult.productVariantsBulkCreate.userErrors.map((e) => e.message).join("; ")}`
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    const variantIds = (variantsResult.productVariantsBulkCreate.productVariants ?? []).map((v) => v.id);
+    const data = { productId, variantIds };
+
+    if (flags.json) {
+      formatOutput(data, [], { json: true, noColor: flags.noColor });
+    } else {
+      process.stdout.write(`Created product: ${productId}\n`);
+      process.stdout.write(`Created variants: ${variantIds.join(", ")}\n`);
+    }
+  } catch (err) {
+    if (err instanceof ConfigError) {
+      formatError(err.message);
+      process.exitCode = 1;
+      return;
+    }
+    if (err instanceof GraphQLError) {
+      formatError(err.message);
+      process.exitCode = 1;
+      return;
+    }
+    throw err;
+  }
+}
+
+async function rollbackProduct(client: ReturnType<typeof createClient>, productId: string): Promise<void> {
+  try {
+    await client.query(PRODUCT_DELETE_MUTATION, { input: { id: productId } });
+  } catch {
+    // Best-effort rollback
+  }
+}
+
+register("product", "Product management", "create", {
+  description: "Create a product with optional variant support",
+  handler: handleProductCreate,
+});
+
 register("product", "Product management", "list", {
   description: "List products with filtering and pagination",
   handler: handleProductList,

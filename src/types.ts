@@ -11,6 +11,12 @@ export interface GlobalFlags {
   vendor?: string;
   limit?: string;
   cursor?: string;
+  title?: string;
+  handle?: string;
+  tags?: string;
+  description?: string;
+  variants?: string;
+  options?: string;
 }
 
 export interface ParsedArgs {
