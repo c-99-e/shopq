@@ -1,6 +1,6 @@
 import { register } from "../registry";
 import { formatError } from "../output";
-import { resolveConfig, createClient, ConfigError } from "../graphql";
+import { getClient, handleCommandError } from "../helpers";
 import type { ParsedArgs } from "../types";
 
 async function handleGql(parsed: ParsedArgs): Promise<void> {
@@ -43,20 +43,13 @@ async function handleGql(parsed: ParsedArgs): Promise<void> {
   }
 
   // Resolve config and create client
-  let config;
+  let client;
   try {
-    config = resolveConfig(parsed.flags.store);
+    client = getClient(parsed.flags);
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
+    return;
   }
-
-  const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-  const client = createClient({ ...config, protocol });
 
   const result = await client.rawQuery(query, variables);
 

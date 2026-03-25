@@ -1,6 +1,6 @@
 import { register } from "../registry";
 import { formatOutput, formatError } from "../output";
-import { resolveConfig, createClient, ConfigError, GraphQLError } from "../graphql";
+import { getClient, handleCommandError } from "../helpers";
 import type { ParsedArgs } from "../types";
 
 const VALID_TYPES = ["IMAGE", "VIDEO", "GENERIC_FILE"] as const;
@@ -95,9 +95,7 @@ async function handleFileList(parsed: ParsedArgs): Promise<void> {
   }
 
   try {
-    const config = resolveConfig(flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(flags);
 
     let limit = flags.limit ? parseInt(flags.limit, 10) : 50;
     if (limit > 250) limit = 250;
@@ -147,17 +145,7 @@ async function handleFileList(parsed: ParsedArgs): Promise<void> {
 
     formatOutput(files, columns, { json: false, noColor: flags.noColor, pageInfo });
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 

@@ -1,6 +1,7 @@
 import { register } from "../registry";
 import { formatOutput, formatError } from "../output";
-import { resolveConfig, createClient, ConfigError, GraphQLError } from "../graphql";
+import { getClient, handleCommandError } from "../helpers";
+import type { GraphQLClient } from "../graphql";
 import type { ParsedArgs } from "../types";
 
 const PRODUCTS_QUERY = `query ProductList($first: Int!, $after: String, $sortKey: ProductSortKeys, $query: String) {
@@ -50,9 +51,7 @@ function buildQueryFilter(flags: ParsedArgs["flags"]): string | undefined {
 
 async function handleProductList(parsed: ParsedArgs): Promise<void> {
   try {
-    const config = resolveConfig(parsed.flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(parsed.flags);
 
     let limit = parsed.flags.limit ? parseInt(parsed.flags.limit, 10) : 50;
     if (limit > 250) limit = 250;
@@ -97,17 +96,7 @@ async function handleProductList(parsed: ParsedArgs): Promise<void> {
 
     formatOutput(products, columns, { json: false, noColor: parsed.flags.noColor, pageInfo });
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 
@@ -221,9 +210,7 @@ async function handleProductGet(parsed: ParsedArgs): Promise<void> {
   }
 
   try {
-    const config = resolveConfig(parsed.flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(parsed.flags);
 
     const resolved = resolveProductId(idOrTitle);
 
@@ -273,17 +260,7 @@ async function handleProductGet(parsed: ParsedArgs): Promise<void> {
       outputProduct(result.product, parsed);
     }
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 
@@ -402,9 +379,7 @@ async function handleProductCreate(parsed: ParsedArgs): Promise<void> {
   }
 
   try {
-    const config = resolveConfig(flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(flags);
 
     const status = flags.status ? flags.status.toUpperCase() : "DRAFT";
 
@@ -490,21 +465,11 @@ async function handleProductCreate(parsed: ParsedArgs): Promise<void> {
       process.stdout.write(`Created variants: ${variantIds.join(", ")}\n`);
     }
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 
-async function rollbackProduct(client: ReturnType<typeof createClient>, productId: string): Promise<void> {
+async function rollbackProduct(client: GraphQLClient, productId: string): Promise<void> {
   try {
     await client.query(PRODUCT_DELETE_MUTATION, { input: { id: productId } });
   } catch {
@@ -540,9 +505,7 @@ async function handleProductUpdate(parsed: ParsedArgs): Promise<void> {
   }
 
   try {
-    const config = resolveConfig(parsed.flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(parsed.flags);
 
     // Resolve product ID
     const resolved = resolveProductId(idOrTitle);
@@ -611,17 +574,7 @@ async function handleProductUpdate(parsed: ParsedArgs): Promise<void> {
       process.stdout.write(lines.join("\n") + "\n");
     }
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 
@@ -647,9 +600,7 @@ async function handleProductDelete(parsed: ParsedArgs): Promise<void> {
   }
 
   try {
-    const config = resolveConfig(parsed.flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(parsed.flags);
 
     // Resolve product ID
     const resolved = resolveProductId(idOrTitle);
@@ -720,17 +671,7 @@ async function handleProductDelete(parsed: ParsedArgs): Promise<void> {
       process.stdout.write(`Deleted product: ${productTitle} (${productGid})\n`);
     }
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 

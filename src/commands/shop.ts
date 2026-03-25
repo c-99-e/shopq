@@ -1,6 +1,6 @@
 import { register } from "../registry";
-import { formatOutput, formatError } from "../output";
-import { resolveConfig, createClient, ConfigError, GraphQLError } from "../graphql";
+import { formatOutput } from "../output";
+import { getClient, handleCommandError } from "../helpers";
 import type { ParsedArgs } from "../types";
 
 const SHOP_QUERY = `{
@@ -52,9 +52,7 @@ function formatAddress(addr: ShopResponse["shop"]["billingAddress"]): string {
 
 async function handleShopGet(parsed: ParsedArgs): Promise<void> {
   try {
-    const config = resolveConfig(parsed.flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(parsed.flags);
 
     const result = await client.query<ShopResponse>(SHOP_QUERY);
     const shop = result.shop;
@@ -102,17 +100,7 @@ async function handleShopGet(parsed: ParsedArgs): Promise<void> {
 
     formatOutput(data, columns, { json: false, noColor: parsed.flags.noColor });
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 

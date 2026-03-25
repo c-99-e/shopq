@@ -1,6 +1,6 @@
 import { register } from "../registry";
 import { formatOutput, formatError } from "../output";
-import { resolveConfig, createClient, ConfigError, GraphQLError } from "../graphql";
+import { getClient, handleCommandError } from "../helpers";
 import type { ParsedArgs } from "../types";
 
 const PAGE_CREATE_MUTATION = `mutation PageCreate($page: PageCreateInput!) {
@@ -31,9 +31,7 @@ async function handlePageCreate(parsed: ParsedArgs): Promise<void> {
   }
 
   try {
-    const config = resolveConfig(flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(flags);
 
     const page: Record<string, unknown> = {
       title: flags.title,
@@ -93,17 +91,7 @@ async function handlePageCreate(parsed: ParsedArgs): Promise<void> {
       process.stdout.write(`Created page: ${created.handle} (${created.id})\n`);
     }
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 
@@ -153,9 +141,7 @@ function extractSeo(metafields: { edges: Array<{ node: MetafieldNode }> }): { ti
 
 async function handlePageList(parsed: ParsedArgs): Promise<void> {
   try {
-    const config = resolveConfig(parsed.flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(parsed.flags);
 
     let limit = parsed.flags.limit ? parseInt(parsed.flags.limit, 10) : 50;
     if (limit > 250) limit = 250;
@@ -216,17 +202,7 @@ async function handlePageList(parsed: ParsedArgs): Promise<void> {
 
     formatOutput(tableData, columns, { json: false, noColor: parsed.flags.noColor, pageInfo });
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 
@@ -260,9 +236,7 @@ async function handlePageGet(parsed: ParsedArgs): Promise<void> {
   }
 
   try {
-    const config = resolveConfig(parsed.flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(parsed.flags);
 
     const result = await client.query<{
       pageByHandle: {
@@ -318,17 +292,7 @@ async function handlePageGet(parsed: ParsedArgs): Promise<void> {
 
     process.stdout.write(lines.join("\n") + "\n");
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 
@@ -421,9 +385,7 @@ async function handlePageUpdate(parsed: ParsedArgs): Promise<void> {
   }
 
   try {
-    const config = resolveConfig(flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(flags);
 
     // Look up page by handle
     const lookup = await client.query<{
@@ -457,17 +419,7 @@ async function handlePageUpdate(parsed: ParsedArgs): Promise<void> {
       process.stdout.write(`Updated fields: ${updatedFields.join(", ")}\n`);
     }
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 

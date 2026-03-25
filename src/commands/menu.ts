@@ -1,6 +1,6 @@
 import { register } from "../registry";
 import { formatOutput, formatError } from "../output";
-import { resolveConfig, createClient, ConfigError, GraphQLError } from "../graphql";
+import { getClient, handleCommandError } from "../helpers";
 import type { ParsedArgs } from "../types";
 
 const MENU_ITEMS_FRAGMENT = `
@@ -106,9 +106,7 @@ async function handleMenuGet(parsed: ParsedArgs): Promise<void> {
   }
 
   try {
-    const config = resolveConfig(parsed.flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(parsed.flags);
 
     const resolved = resolveMenuId(idOrHandle);
     let menu: Menu | null = null;
@@ -158,17 +156,7 @@ async function handleMenuGet(parsed: ParsedArgs): Promise<void> {
 
     process.stdout.write(lines.join("\n") + "\n");
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 
@@ -190,9 +178,7 @@ const MENUS_LIST_QUERY = `query MenuList {
 
 async function handleMenuList(parsed: ParsedArgs): Promise<void> {
   try {
-    const config = resolveConfig(parsed.flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(parsed.flags);
 
     const result = await client.query<{
       menus: { edges: Array<{ node: Menu }> };
@@ -237,17 +223,7 @@ async function handleMenuList(parsed: ParsedArgs): Promise<void> {
 
     process.stdout.write(lines.join("\n") + "\n");
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 

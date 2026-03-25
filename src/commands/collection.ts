@@ -1,6 +1,6 @@
 import { register } from "../registry";
 import { formatOutput, formatError } from "../output";
-import { resolveConfig, createClient, ConfigError, GraphQLError } from "../graphql";
+import { getClient, handleCommandError } from "../helpers";
 import type { ParsedArgs } from "../types";
 
 const COLLECTION_GET_BY_ID_QUERY = `query CollectionGet($id: ID!) {
@@ -65,9 +65,7 @@ async function handleCollectionGet(parsed: ParsedArgs): Promise<void> {
   }
 
   try {
-    const config = resolveConfig(parsed.flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(parsed.flags);
 
     const resolved = resolveCollectionInput(idOrHandle);
     let collection: CollectionNode | null = null;
@@ -119,17 +117,7 @@ async function handleCollectionGet(parsed: ParsedArgs): Promise<void> {
 
     process.stdout.write(lines.join("\n") + "\n");
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 
@@ -159,9 +147,7 @@ interface CollectionsResponse {
 
 async function handleCollectionList(parsed: ParsedArgs): Promise<void> {
   try {
-    const config = resolveConfig(parsed.flags.store);
-    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
-    const client = createClient({ ...config, protocol });
+    const client = getClient(parsed.flags);
 
     let limit = parsed.flags.limit ? parseInt(parsed.flags.limit, 10) : 50;
     if (limit > 250) limit = 250;
@@ -202,17 +188,7 @@ async function handleCollectionList(parsed: ParsedArgs): Promise<void> {
 
     formatOutput(collections, columns, { json: false, noColor: parsed.flags.noColor, pageInfo });
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    if (err instanceof GraphQLError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 

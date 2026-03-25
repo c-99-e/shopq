@@ -1,6 +1,7 @@
 import { register } from "../registry";
-import { formatOutput, formatError } from "../output";
-import { resolveConfig, ConfigError, API_VERSION } from "../graphql";
+import { formatOutput } from "../output";
+import { resolveConfig, API_VERSION } from "../graphql";
+import { handleCommandError } from "../helpers";
 import type { ParsedArgs } from "../types";
 
 function maskToken(token: string): string {
@@ -29,12 +30,7 @@ async function handleConfigShow(parsed: ParsedArgs): Promise<void> {
       noColor: parsed.flags.noColor,
     });
   } catch (err) {
-    if (err instanceof ConfigError) {
-      formatError(err.message);
-      process.exitCode = 1;
-      return;
-    }
-    throw err;
+    handleCommandError(err);
   }
 }
 
