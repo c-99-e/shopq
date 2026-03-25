@@ -133,6 +133,94 @@ async function handleCollectionGet(parsed: ParsedArgs): Promise<void> {
   }
 }
 
+const COLLECTIONS_QUERY = `query CollectionList($first: Int!, $after: String) {
+  collections(first: $first, after: $after) {
+    edges {
+      node {
+        id
+        title
+        handle
+        descriptionHtml
+        productsCount { count precision }
+        image { url altText }
+        seo { title description }
+      }
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}`;
+
+interface CollectionsResponse {
+  collections: {
+    edges: Array<{ node: CollectionNode }>;
+    pageInfo: { hasNextPage: boolean; endCursor: string };
+  };
+}
+
+async function handleCollectionList(parsed: ParsedArgs): Promise<void> {
+  try {
+    const config = resolveConfig(parsed.flags.store);
+    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
+    const client = createClient({ ...config, protocol });
+
+    let limit = parsed.flags.limit ? parseInt(parsed.flags.limit, 10) : 50;
+    if (limit > 250) limit = 250;
+
+    const variables: Record<string, unknown> = { first: limit };
+    if (parsed.flags.cursor) {
+      variables.after = parsed.flags.cursor;
+    }
+
+    const result = await client.query<CollectionsResponse>(COLLECTIONS_QUERY, variables);
+    const collections = result.collections.edges.map((e) => ({
+      id: e.node.id,
+      title: e.node.title,
+      handle: e.node.handle,
+      description: stripHtml(e.node.descriptionHtml),
+      productsCount: parsed.flags.json
+        ? e.node.productsCount
+        : e.node.productsCount.count,
+      image: e.node.image ? { url: e.node.image.url, alt: e.node.image.altText ?? "" } : null,
+      seo: e.node.seo,
+    }));
+
+    const pageInfo = result.collections.pageInfo;
+
+    if (parsed.flags.json) {
+      formatOutput(collections, [], { json: true, noColor: parsed.flags.noColor, pageInfo });
+      return;
+    }
+
+    const columns = [
+      { key: "id", header: "ID" },
+      { key: "title", header: "Title" },
+      { key: "handle", header: "Handle" },
+      { key: "productsCount", header: "Products" },
+      { key: "image", header: "Image", format: (v: any) => v ? "Yes" : "No" },
+      { key: "description", header: "Description" },
+    ];
+
+    formatOutput(collections, columns, { json: false, noColor: parsed.flags.noColor, pageInfo });
+  } catch (err) {
+    if (err instanceof ConfigError) {
+      formatError(err.message);
+      process.exitCode = 1;
+      return;
+    }
+    if (err instanceof GraphQLError) {
+      formatError(err.message);
+      process.exitCode = 1;
+      return;
+    }
+    throw err;
+  }
+}
+
+register("collection", "Collection management", "list", {
+  description: "List collections with pagination",
+  handler: handleCollectionList,
+});
+
 register("collection", "Collection management", "get", {
   description: "Get a single collection by ID or handle",
   handler: handleCollectionGet,
