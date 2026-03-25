@@ -1,7 +1,7 @@
 import { test, expect, describe, beforeEach, afterEach, mock } from "bun:test";
 
 // We'll test the helpers module once it exists
-import { getClient, handleCommandError } from "../src/helpers";
+import { getClient, handleCommandError, clampLimit } from "../src/helpers";
 import { ConfigError, GraphQLError } from "../src/graphql";
 
 describe("getClient", () => {
@@ -93,5 +93,61 @@ describe("handleCommandError", () => {
 
   test("rethrows non-Error values", () => {
     expect(() => handleCommandError("string error")).toThrow();
+  });
+});
+
+describe("clampLimit", () => {
+  let stderrOutput: string;
+  const originalWrite = process.stderr.write;
+  const originalExitCode = process.exitCode;
+
+  beforeEach(() => {
+    stderrOutput = "";
+    process.stderr.write = ((chunk: any) => {
+      stderrOutput += String(chunk);
+      return true;
+    }) as any;
+    process.exitCode = undefined;
+  });
+
+  afterEach(() => {
+    process.stderr.write = originalWrite;
+    process.exitCode = originalExitCode;
+  });
+
+  test("returns default (50) when value is undefined", () => {
+    expect(clampLimit(undefined)).toBe(50);
+  });
+
+  test("parses and returns valid limit", () => {
+    expect(clampLimit("25")).toBe(25);
+  });
+
+  test("clamps to 1 when value is 0", () => {
+    expect(clampLimit("0")).toBe(1);
+    expect(stderrOutput).toContain("--limit");
+  });
+
+  test("clamps to 1 when value is negative", () => {
+    expect(clampLimit("-1")).toBe(1);
+    expect(stderrOutput).toContain("--limit");
+  });
+
+  test("clamps to 250 when value exceeds maximum", () => {
+    expect(clampLimit("999")).toBe(250);
+    expect(stderrOutput).toContain("--limit");
+  });
+
+  test("returns 1 for minimum valid value", () => {
+    expect(clampLimit("1")).toBe(1);
+  });
+
+  test("returns 250 for maximum valid value", () => {
+    expect(clampLimit("250")).toBe(250);
+  });
+
+  test("clamps NaN input to 1 and warns", () => {
+    expect(clampLimit("abc")).toBe(1);
+    expect(stderrOutput).toContain("--limit");
   });
 });

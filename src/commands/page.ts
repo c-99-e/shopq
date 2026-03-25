@@ -1,6 +1,6 @@
 import { register } from "../registry";
 import { formatOutput, formatError } from "../output";
-import { getClient, handleCommandError, readFileText } from "../helpers";
+import { getClient, handleCommandError, readFileText, clampLimit } from "../helpers";
 import type { ParsedArgs } from "../types";
 
 const PAGE_CREATE_MUTATION = `mutation PageCreate($page: PageCreateInput!) {
@@ -145,8 +145,7 @@ async function handlePageList(parsed: ParsedArgs): Promise<void> {
   try {
     const client = getClient(parsed.flags);
 
-    let limit = parsed.flags.limit ? parseInt(parsed.flags.limit, 10) : 50;
-    if (limit > 250) limit = 250;
+    const limit = clampLimit(parsed.flags.limit);
 
     const variables: Record<string, unknown> = { first: limit };
     if (parsed.flags.cursor) variables.after = parsed.flags.cursor;

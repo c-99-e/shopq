@@ -1,6 +1,6 @@
 import { register } from "../registry";
 import { formatOutput, formatError } from "../output";
-import { getClient, handleCommandError } from "../helpers";
+import { getClient, handleCommandError, clampLimit } from "../helpers";
 import type { ParsedArgs } from "../types";
 
 const VALID_TYPES = ["IMAGE", "VIDEO", "GENERIC_FILE"] as const;
@@ -97,8 +97,7 @@ async function handleFileList(parsed: ParsedArgs): Promise<void> {
   try {
     const client = getClient(flags);
 
-    let limit = flags.limit ? parseInt(flags.limit, 10) : 50;
-    if (limit > 250) limit = 250;
+    const limit = clampLimit(flags.limit);
 
     const queryParts: string[] = [];
     if (flags.type) queryParts.push(`media_type:${flags.type.toUpperCase()}`);

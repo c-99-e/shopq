@@ -1,6 +1,6 @@
 import { register } from "../registry";
 import { formatOutput, formatError } from "../output";
-import { getClient, handleCommandError, readFileJson } from "../helpers";
+import { getClient, handleCommandError, readFileJson, clampLimit } from "../helpers";
 import type { GraphQLClient } from "../graphql";
 import type { ParsedArgs } from "../types";
 
@@ -53,8 +53,7 @@ async function handleProductList(parsed: ParsedArgs): Promise<void> {
   try {
     const client = getClient(parsed.flags);
 
-    let limit = parsed.flags.limit ? parseInt(parsed.flags.limit, 10) : 50;
-    if (limit > 250) limit = 250;
+    const limit = clampLimit(parsed.flags.limit);
 
     const variables: Record<string, unknown> = {
       first: limit,
