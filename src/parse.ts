@@ -92,6 +92,8 @@ export function parseArgs(argv: string[]): ParsedArgs {
       flags.options = argv[i]!;
     } else if (arg?.startsWith("--options=")) {
       flags.options = arg.slice("--options=".length);
+    } else if (arg === "--yes" || arg === "-y") {
+      flags.yes = true;
     } else if (arg) {
       positional.push(arg);
     }

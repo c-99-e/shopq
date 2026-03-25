@@ -625,6 +625,120 @@ async function handleProductUpdate(parsed: ParsedArgs): Promise<void> {
   }
 }
 
+// --- product delete ---
+
+const PRODUCT_SUMMARY_QUERY = `query ProductSummary($id: ID!) {
+  product(id: $id) {
+    id
+    title
+  }
+}`;
+
+interface ProductSummaryResponse {
+  product: { id: string; title: string } | null;
+}
+
+async function handleProductDelete(parsed: ParsedArgs): Promise<void> {
+  const idOrTitle = parsed.args.join(" ");
+  if (!idOrTitle) {
+    formatError("Usage: misty product delete <id-or-title> [--yes]");
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const config = resolveConfig(parsed.flags.store);
+    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
+    const client = createClient({ ...config, protocol });
+
+    // Resolve product ID
+    const resolved = resolveProductId(idOrTitle);
+    let productGid: string;
+    let productTitle: string;
+
+    if (resolved.type === "gid") {
+      // Fetch product summary to get title
+      const result = await client.query<ProductSummaryResponse>(PRODUCT_SUMMARY_QUERY, { id: resolved.id });
+      if (!result.product) {
+        formatError(`Product "${idOrTitle}" not found`);
+        process.exitCode = 1;
+        return;
+      }
+      productGid = result.product.id;
+      productTitle = result.product.title;
+    } else {
+      // Title search
+      const searchResult = await client.query<ProductSearchResponse>(PRODUCT_SEARCH_QUERY, {
+        query: `title:${resolved.title}`,
+      });
+      const matches = searchResult.products.edges;
+      if (matches.length === 0) {
+        formatError(`Product "${idOrTitle}" not found`);
+        process.exitCode = 1;
+        return;
+      }
+      if (matches.length > 1) {
+        const columns = [
+          { key: "id", header: "ID" },
+          { key: "title", header: "Title" },
+          { key: "status", header: "Status" },
+        ];
+        formatOutput(matches.map((e) => e.node), columns, { json: false, noColor: parsed.flags.noColor });
+        process.exitCode = 1;
+        return;
+      }
+      productGid = matches[0]!.node.id;
+      productTitle = matches[0]!.node.title;
+    }
+
+    // Dry run — no --yes
+    if (!parsed.flags.yes) {
+      const data = { id: productGid, title: productTitle };
+      if (parsed.flags.json) {
+        formatOutput(data, [], { json: true, noColor: parsed.flags.noColor });
+      } else {
+        process.stdout.write(`Would delete product: ${productTitle} (${productGid})\n`);
+      }
+      return;
+    }
+
+    // Execute delete
+    const result = await client.query<{
+      productDelete: { deletedProductId: string | null; userErrors: UserError[] };
+    }>(PRODUCT_DELETE_MUTATION, { input: { id: productGid } });
+
+    if (result.productDelete.userErrors.length > 0) {
+      formatError(result.productDelete.userErrors.map((e) => e.message).join("; "));
+      process.exitCode = 1;
+      return;
+    }
+
+    const data = { id: productGid, title: productTitle };
+    if (parsed.flags.json) {
+      formatOutput(data, [], { json: true, noColor: parsed.flags.noColor });
+    } else {
+      process.stdout.write(`Deleted product: ${productTitle} (${productGid})\n`);
+    }
+  } catch (err) {
+    if (err instanceof ConfigError) {
+      formatError(err.message);
+      process.exitCode = 1;
+      return;
+    }
+    if (err instanceof GraphQLError) {
+      formatError(err.message);
+      process.exitCode = 1;
+      return;
+    }
+    throw err;
+  }
+}
+
+register("product", "Product management", "delete", {
+  description: "Delete a product by ID or title",
+  handler: handleProductDelete,
+});
+
 register("product", "Product management", "update", {
   description: "Update a product by ID or title",
   handler: handleProductUpdate,

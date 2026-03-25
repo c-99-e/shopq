@@ -17,6 +17,7 @@ export interface GlobalFlags {
   description?: string;
   variants?: string;
   options?: string;
+  yes?: boolean;
 }
 
 export interface ParsedArgs {
