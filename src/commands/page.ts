@@ -1,6 +1,6 @@
 import { register } from "../registry";
 import { formatOutput, formatError } from "../output";
-import { getClient, handleCommandError } from "../helpers";
+import { getClient, handleCommandError, readFileText } from "../helpers";
 import type { ParsedArgs } from "../types";
 
 const PAGE_CREATE_MUTATION = `mutation PageCreate($page: PageCreateInput!) {
@@ -44,7 +44,9 @@ async function handlePageCreate(parsed: ParsedArgs): Promise<void> {
     if (flags.body) {
       page.body = flags.body;
     } else if (flags["body-file"]) {
-      page.body = await Bun.file(flags["body-file"]).text();
+      const bodyContent = await readFileText(flags["body-file"]);
+      if (bodyContent === null) return;
+      page.body = bodyContent;
     }
 
     // SEO metafields
@@ -351,7 +353,9 @@ async function handlePageUpdate(parsed: ParsedArgs): Promise<void> {
     page.body = flags.body;
     updatedFields.push("body");
   } else if (flags["body-file"]) {
-    page.body = await Bun.file(flags["body-file"]).text();
+    const bodyContent = await readFileText(flags["body-file"]);
+    if (bodyContent === null) return;
+    page.body = bodyContent;
     updatedFields.push("body");
   }
 

@@ -259,3 +259,17 @@ describe("misty page update — table output", () => {
     expect(stdout).toContain("title");
   });
 });
+
+describe("misty page update — file-read error handling", () => {
+  test("exits with error when --body-file does not exist", async () => {
+    const { stderr, exitCode } = await run([
+      "page", "update", "about-us",
+      "--body-file", "/tmp/nonexistent-body-file-12345.html",
+    ]);
+    expect(exitCode).not.toBe(0);
+    expect(stderr).toContain("nonexistent-body-file-12345.html");
+    expect(stderr).toMatch(/^Error:/m);
+    expect(stderr).not.toContain("ENOENT");
+    expect(stderr).not.toContain("syscall");
+  });
+});

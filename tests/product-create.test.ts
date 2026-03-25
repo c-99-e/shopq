@@ -333,3 +333,34 @@ describe("misty product create — partial failure rollback", () => {
     expect(deleteReq).toBeDefined();
   });
 });
+
+describe("misty product create — file-read error handling", () => {
+  test("exits with error when --variants file does not exist", async () => {
+    const { stderr, exitCode } = await run([
+      "product", "create",
+      "--title", "Test",
+      "--options", "Size",
+      "--variants", "/tmp/nonexistent-file-12345.json",
+    ]);
+    expect(exitCode).not.toBe(0);
+    expect(stderr).toContain("nonexistent-file-12345.json");
+    expect(stderr).toMatch(/^Error:/m);
+    expect(stderr).not.toContain("ENOENT");
+    expect(stderr).not.toContain("syscall");
+  });
+
+  test("exits with error when --variants file contains invalid JSON", async () => {
+    const badJsonFile = join(tmpDir, "bad-variants.json");
+    await writeFile(badJsonFile, "{ not valid json }}}");
+
+    const { stderr, exitCode } = await run([
+      "product", "create",
+      "--title", "Test",
+      "--options", "Size",
+      "--variants", badJsonFile,
+    ]);
+    expect(exitCode).not.toBe(0);
+    expect(stderr).toMatch(/parse|json|invalid/i);
+    expect(stderr).toMatch(/^Error:/m);
+  });
+});

@@ -270,3 +270,19 @@ describe("misty page create — GraphQL errors", () => {
     expect(stderr).toContain("Title is too long");
   });
 });
+
+describe("misty page create — file-read error handling", () => {
+  test("exits with error when --body-file does not exist", async () => {
+    const { stderr, exitCode } = await run([
+      "page", "create",
+      "--title", "Test",
+      "--body-file", "/tmp/nonexistent-body-file-12345.html",
+    ]);
+    expect(exitCode).not.toBe(0);
+    expect(stderr).toContain("nonexistent-body-file-12345.html");
+    // Should be a formatted error, not a raw ENOENT dump
+    expect(stderr).toMatch(/^Error:/m);
+    expect(stderr).not.toContain("ENOENT");
+    expect(stderr).not.toContain("syscall");
+  });
+});

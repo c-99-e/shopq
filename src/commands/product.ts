@@ -1,6 +1,6 @@
 import { register } from "../registry";
 import { formatOutput, formatError } from "../output";
-import { getClient, handleCommandError } from "../helpers";
+import { getClient, handleCommandError, readFileJson } from "../helpers";
 import type { GraphQLClient } from "../graphql";
 import type { ParsedArgs } from "../types";
 
@@ -378,6 +378,13 @@ async function handleProductCreate(parsed: ParsedArgs): Promise<void> {
     return;
   }
 
+  // Validate variants file early, before any API calls
+  let variantsJson: any = null;
+  if (flags.variants) {
+    variantsJson = await readFileJson(flags.variants);
+    if (variantsJson === null) return;
+  }
+
   try {
     const client = getClient(flags);
 
@@ -418,7 +425,6 @@ async function handleProductCreate(parsed: ParsedArgs): Promise<void> {
     }
 
     // Multi-variant flow
-    const variantsJson = await Bun.file(flags.variants).json();
     const optionNames = flags.options!.split(",").map((o) => o.trim());
 
     // Step 2: Create options
