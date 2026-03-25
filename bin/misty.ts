@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 
-import "../src/commands/auth";
 import "../src/commands/config";
 import "../src/commands/gql";
 import "../src/commands/shop";
