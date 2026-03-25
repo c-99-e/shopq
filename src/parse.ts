@@ -92,6 +92,31 @@ export function parseArgs(argv: string[]): ParsedArgs {
       flags.options = argv[i]!;
     } else if (arg?.startsWith("--options=")) {
       flags.options = arg.slice("--options=".length);
+    } else if (arg === "--body") {
+      i++;
+      flags.body = argv[i]!;
+    } else if (arg?.startsWith("--body=")) {
+      flags.body = arg.slice("--body=".length);
+    } else if (arg === "--body-file") {
+      i++;
+      flags["body-file"] = argv[i]!;
+    } else if (arg?.startsWith("--body-file=")) {
+      flags["body-file"] = arg.slice("--body-file=".length);
+    } else if (arg === "--published") {
+      i++;
+      flags.published = argv[i]!;
+    } else if (arg?.startsWith("--published=")) {
+      flags.published = arg.slice("--published=".length);
+    } else if (arg === "--seo-title") {
+      i++;
+      flags["seo-title"] = argv[i]!;
+    } else if (arg?.startsWith("--seo-title=")) {
+      flags["seo-title"] = arg.slice("--seo-title=".length);
+    } else if (arg === "--seo-desc") {
+      i++;
+      flags["seo-desc"] = argv[i]!;
+    } else if (arg?.startsWith("--seo-desc=")) {
+      flags["seo-desc"] = arg.slice("--seo-desc=".length);
     } else if (arg === "--yes" || arg === "-y") {
       flags.yes = true;
     } else if (arg) {

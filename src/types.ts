@@ -18,6 +18,11 @@ export interface GlobalFlags {
   variants?: string;
   options?: string;
   yes?: boolean;
+  body?: string;
+  "body-file"?: string;
+  published?: string;
+  "seo-title"?: string;
+  "seo-desc"?: string;
 }
 
 export interface ParsedArgs {
