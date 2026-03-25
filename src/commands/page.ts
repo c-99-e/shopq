@@ -230,6 +230,113 @@ async function handlePageList(parsed: ParsedArgs): Promise<void> {
   }
 }
 
+const PAGE_GET_QUERY = `query PageGetByHandle($handle: String!) {
+  pageByHandle(handle: $handle) {
+    id
+    title
+    handle
+    isPublished
+    body
+    createdAt
+    updatedAt
+    metafields(first: 10, namespace: "global") {
+      edges {
+        node {
+          namespace
+          key
+          value
+        }
+      }
+    }
+  }
+}`;
+
+async function handlePageGet(parsed: ParsedArgs): Promise<void> {
+  const handle = parsed.args.join(" ");
+  if (!handle) {
+    formatError("Usage: misty page get <handle>");
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const config = resolveConfig(parsed.flags.store);
+    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
+    const client = createClient({ ...config, protocol });
+
+    const result = await client.query<{
+      pageByHandle: {
+        id: string;
+        title: string;
+        handle: string;
+        isPublished: boolean;
+        body: string;
+        createdAt: string;
+        updatedAt: string;
+        metafields: { edges: Array<{ node: MetafieldNode }> };
+      } | null;
+    }>(PAGE_GET_QUERY, { handle });
+
+    if (!result.pageByHandle) {
+      formatError(`Page "${handle}" not found`);
+      process.exitCode = 1;
+      return;
+    }
+
+    const page = result.pageByHandle;
+    const seo = extractSeo(page.metafields);
+
+    if (parsed.flags.json) {
+      const data = {
+        id: page.id,
+        title: page.title,
+        handle: page.handle,
+        published: page.isPublished,
+        body: page.body,
+        seo,
+        createdAt: page.createdAt,
+        updatedAt: page.updatedAt,
+      };
+      formatOutput(data, [], { json: true, noColor: parsed.flags.noColor });
+      return;
+    }
+
+    // Key-value table output
+    const label = (name: string) => parsed.flags.noColor ? name : `\x1b[1m${name}\x1b[0m`;
+    const lines: string[] = [];
+    lines.push(`${label("ID")}: ${page.id}`);
+    lines.push(`${label("Title")}: ${page.title}`);
+    lines.push(`${label("Handle")}: ${page.handle}`);
+    lines.push(`${label("Published")}: ${page.isPublished}`);
+    lines.push(`${label("SEO Title")}: ${seo.title ?? ""}`);
+    lines.push(`${label("SEO Description")}: ${seo.description ?? ""}`);
+    lines.push(`${label("Created")}: ${page.createdAt}`);
+    lines.push(`${label("Updated")}: ${page.updatedAt}`);
+    lines.push("");
+    lines.push(`${label("Body")}:`);
+    lines.push(page.body);
+
+    process.stdout.write(lines.join("\n") + "\n");
+  } catch (err) {
+    if (err instanceof ConfigError) {
+      formatError(err.message);
+      process.exitCode = 1;
+      return;
+    }
+    if (err instanceof GraphQLError) {
+      formatError(err.message);
+      process.exitCode = 1;
+      return;
+    }
+    throw err;
+  }
+}
+
+register("page", "Page management", "get", {
+  description: "Get a single page by handle",
+  handler: handlePageGet,
+});
+
 register("page", "Page management", "list", {
   description: "List static store pages",
   handler: handlePageList,
