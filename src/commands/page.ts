@@ -346,3 +346,132 @@ register("page", "Page management", "create", {
   description: "Create a static store page",
   handler: handlePageCreate,
 });
+
+const PAGE_LOOKUP_QUERY = `query PageLookup($handle: String!) {
+  pageByHandle(handle: $handle) { id }
+}`;
+
+const PAGE_UPDATE_MUTATION = `mutation PageUpdate($id: ID!, $page: PageUpdateInput!) {
+  pageUpdate(id: $id, page: $page) {
+    page { id }
+    userErrors { field message }
+  }
+}`;
+
+async function handlePageUpdate(parsed: ParsedArgs): Promise<void> {
+  const { flags } = parsed;
+  const handle = parsed.args.join(" ");
+
+  if (!handle) {
+    formatError("Usage: misty page update <handle>");
+    process.exitCode = 1;
+    return;
+  }
+
+  if (flags.body && flags["body-file"]) {
+    formatError("--body and --body-file are mutually exclusive; provide only one");
+    process.exitCode = 2;
+    return;
+  }
+
+  // Build update input and track which fields are being updated
+  const page: Record<string, unknown> = {};
+  const updatedFields: string[] = [];
+
+  if (flags.title) {
+    page.title = flags.title;
+    updatedFields.push("title");
+  }
+
+  if (flags.body) {
+    page.body = flags.body;
+    updatedFields.push("body");
+  } else if (flags["body-file"]) {
+    page.body = await Bun.file(flags["body-file"]).text();
+    updatedFields.push("body");
+  }
+
+  const metafields: Array<{ namespace: string; key: string; type: string; value: string }> = [];
+  if (flags["seo-title"]) {
+    metafields.push({
+      namespace: "global",
+      key: "title_tag",
+      type: "single_line_text_field",
+      value: flags["seo-title"],
+    });
+    updatedFields.push("seo_title");
+  }
+  if (flags["seo-desc"]) {
+    metafields.push({
+      namespace: "global",
+      key: "description_tag",
+      type: "single_line_text_field",
+      value: flags["seo-desc"],
+    });
+    updatedFields.push("seo_desc");
+  }
+  if (metafields.length > 0) {
+    page.metafields = metafields;
+  }
+
+  if (updatedFields.length === 0) {
+    formatError("No update flags provided; at least one of --title, --body, --body-file, --seo-title, --seo-desc is required");
+    process.exitCode = 2;
+    return;
+  }
+
+  try {
+    const config = resolveConfig(flags.store);
+    const protocol = process.env.MISTY_PROTOCOL === "http" ? "http" : "https";
+    const client = createClient({ ...config, protocol });
+
+    // Look up page by handle
+    const lookup = await client.query<{
+      pageByHandle: { id: string } | null;
+    }>(PAGE_LOOKUP_QUERY, { handle });
+
+    if (!lookup.pageByHandle) {
+      formatError(`Page "${handle}" not found`);
+      process.exitCode = 1;
+      return;
+    }
+
+    const pageId = lookup.pageByHandle.id;
+
+    const result = await client.query<{
+      pageUpdate: {
+        page: { id: string } | null;
+        userErrors: UserError[];
+      };
+    }>(PAGE_UPDATE_MUTATION, { id: pageId, page });
+
+    if (result.pageUpdate.userErrors.length > 0) {
+      formatError(result.pageUpdate.userErrors.map((e) => e.message).join("; "));
+      process.exitCode = 1;
+      return;
+    }
+
+    if (flags.json) {
+      formatOutput(updatedFields, [], { json: true, noColor: flags.noColor });
+    } else {
+      process.stdout.write(`Updated fields: ${updatedFields.join(", ")}\n`);
+    }
+  } catch (err) {
+    if (err instanceof ConfigError) {
+      formatError(err.message);
+      process.exitCode = 1;
+      return;
+    }
+    if (err instanceof GraphQLError) {
+      formatError(err.message);
+      process.exitCode = 1;
+      return;
+    }
+    throw err;
+  }
+}
+
+register("page", "Page management", "update", {
+  description: "Update a static store page",
+  handler: handlePageUpdate,
+});
