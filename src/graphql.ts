@@ -5,6 +5,7 @@ export interface ClientConfig {
   accessToken: string;
   protocol?: "https" | "http";
   maxRetries?: number;
+  timeoutMs?: number;
 }
 
 export interface RawGraphQLResponse {
@@ -59,21 +60,30 @@ function sleep(ms: number): Promise<void> {
 }
 
 export function createClient(config: ClientConfig): GraphQLClient {
-  const { store, accessToken, protocol = "https", maxRetries = 5 } = config;
+  const { store, accessToken, protocol = "https", maxRetries = 5, timeoutMs = 30000 } = config;
   const endpoint = `${protocol}://${store}/admin/api/${API_VERSION}/graphql.json`;
 
   async function fetchRaw(query: string, variables?: Record<string, unknown>): Promise<RawGraphQLResponse> {
     const body = JSON.stringify({ query, variables });
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": accessToken,
-        },
-        body,
-      });
+      let response: Response;
+      try {
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Shopify-Access-Token": accessToken,
+          },
+          body,
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+      } catch (err: any) {
+        if (err?.name === "TimeoutError") {
+          throw new Error(`Request timed out after ${timeoutMs}ms`);
+        }
+        throw err;
+      }
 
       if (response.status === 429) {
         if (attempt === maxRetries) {
