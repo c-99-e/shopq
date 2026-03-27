@@ -2,7 +2,7 @@ import { test, expect } from "bun:test";
 
 const readme = await Bun.file("README.md").text();
 
-test("README describes what Mistea is", () => {
+test("README describes what shopctl is", () => {
   expect(readme).toMatch(/shopify/i);
   expect(readme).toMatch(/cli/i);
 });
