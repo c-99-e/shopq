@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const BIN = resolve(import.meta.dir, "../bin/shopq.ts");
-const pkg = JSON.parse(readFileSync(resolve(import.meta.dir, "../package.json"), "utf-8"));
+const pkg = JSON.parse(
+	readFileSync(resolve(import.meta.dir, "../package.json"), "utf-8"),
+);
 
 async function run(args: string[], env?: Record<string, string>) {
 	const proc = Bun.spawn(["bun", BIN, ...args], {
