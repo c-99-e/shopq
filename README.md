@@ -1,6 +1,7 @@
 # shopq
 
 [![CI](https://github.com/c-99-e/shopq/actions/workflows/ci.yml/badge.svg)](https://github.com/c-99-e/shopq/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/shopq)](https://www.npmjs.com/package/shopq)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Bun](https://img.shields.io/badge/Bun-%3E%3D1.3-black?logo=bun)](https://bun.sh)
 
@@ -8,26 +9,26 @@ A zero-dependency Shopify Admin CLI built on [Bun](https://bun.sh). Manage produ
 
 Built with AI agents as the primary user — structured JSON output, predictable exit codes, and no interactive prompts.
 
+## Install
+
+```bash
+npm install -g shopq
+```
+
 ## Prerequisites
 
-- [Bun](https://bun.sh) v1.3+
+- [Node.js](https://nodejs.org) v18+ or [Bun](https://bun.sh) v1.3+
 - A Shopify store with a [Dev Dashboard app](https://shopify.dev/docs/apps/build/authentication-authorization/client-credentials) configured for Client Credentials
 
 ## Setup
 
-1. Clone the repo and install dependencies:
+Configure your store credentials:
 
 ```bash
-git clone https://github.com/c-99-e/shopq.git
-cd shopq
-bun install
+shopq config set --store your-store.myshopify.com --client-id your-client-id --client-secret your-client-secret
 ```
 
-2. Copy the example env file and fill in your credentials:
-
-```bash
-cp .env.example .env
-```
+Or set environment variables:
 
 ```
 SHOPIFY_STORE=your-store.myshopify.com
@@ -35,11 +36,12 @@ SHOPIFY_CLIENT_ID=your-client-id
 SHOPIFY_CLIENT_SECRET=your-client-secret
 ```
 
-Bun loads `.env` automatically — no extra setup needed.
-
-3. Link the CLI globally (optional):
+### Development
 
 ```bash
+git clone https://github.com/c-99-e/shopq.git
+cd shopq
+bun install
 bun link
 ```
 
