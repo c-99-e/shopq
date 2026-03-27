@@ -17,7 +17,7 @@ bun install -g shopq
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org) v18+ or [Bun](https://bun.sh) v1.3+
+- [Bun](https://bun.sh) v1.3+ (also works with Node.js v18+)
 - A Shopify store with a [Dev Dashboard app](https://shopify.dev/docs/apps/build/authentication-authorization/client-credentials) configured for Client Credentials
 
 ## Setup
