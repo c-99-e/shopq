@@ -1,6 +1,6 @@
 # shopq
 
-[![CI](https://github.com/c-99-e/shopq/actions/workflows/ci.yml/badge.svg)](https://github.com/c-99-e/shopq/actions/workflows/ci.yml)
+[![CI](https://github.com/c99e/shopq/actions/workflows/ci.yml/badge.svg)](https://github.com/c99e/shopq/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/shopq)](https://www.npmjs.com/package/shopq)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Bun](https://img.shields.io/badge/Bun-%3E%3D1.3-black?logo=bun)](https://bun.sh)
@@ -46,7 +46,7 @@ Bun loads `.env` automatically — no extra setup needed. shopq handles the OAut
 ### Development
 
 ```bash
-git clone https://github.com/c-99-e/shopq.git
+git clone https://github.com/c99e/shopq.git
 cd shopq
 bun install
 
