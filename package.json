@@ -15,7 +15,6 @@
 		"build": "bun build bin/shopq.ts --target=node --outfile dist/shopq.js && chmod +x dist/shopq.js",
 		"prepublishOnly": "bun run build",
 		"test": "bun test",
-		"prepare": "lefthook install",
 		"check": "bunx --bun biome check --write .",
 		"ci:check": "bunx --bun biome check ."
 	},
@@ -45,8 +44,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.9",
-		"@types/bun": "latest",
-		"lefthook": "^2.1.4"
+		"@types/bun": "latest"
 	},
 	"peerDependencies": {
 		"typescript": "^5.9.3"
