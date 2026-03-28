@@ -1,6 +1,6 @@
 {
 	"name": "shopq",
-	"version": "0.3.3",
+	"version": "0.3.4",
 	"description": "A zero-dependency Shopify Admin CLI built on Bun",
 	"type": "module",
 	"license": "MIT",
@@ -47,6 +47,6 @@
 		"@types/bun": "latest"
 	},
 	"peerDependencies": {
-		"typescript": "^5"
+		"typescript": "^5.9.3"
 	}
 }
