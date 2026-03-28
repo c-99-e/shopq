@@ -47,7 +47,7 @@ export class ConfigError extends Error {
 	constructor(public missing: string[]) {
 		super(
 			`Missing required environment variables: ${missing.join(", ")}\n` +
-			`Set them in ~/.config/shopq/.env, a local .env file, or as environment variables.`,
+				`Set them in ~/.config/shopq/.env, a local .env file, or as environment variables.`,
 		);
 		this.name = "ConfigError";
 	}
@@ -72,7 +72,10 @@ function loadConfigEnv(): void {
 			const eqIdx = trimmed.indexOf("=");
 			if (eqIdx === -1) continue;
 			const key = trimmed.slice(0, eqIdx).trim();
-			const value = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, "");
+			const value = trimmed
+				.slice(eqIdx + 1)
+				.trim()
+				.replace(/^["']|["']$/g, "");
 			// Don't override existing env vars (CWD .env or real env take precedence)
 			if (!process.env[key]) {
 				process.env[key] = value;
