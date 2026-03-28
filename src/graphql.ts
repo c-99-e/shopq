@@ -73,7 +73,7 @@ function loadEnvFile(filePath: string): void {
 				.slice(eqIdx + 1)
 				.trim()
 				.replace(/^["']|["']$/g, "");
-			if (!process.env[key]) {
+			if (!(key in process.env)) {
 				process.env[key] = value;
 			}
 		}
