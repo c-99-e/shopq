@@ -17,7 +17,7 @@ bun install -g shopq
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) v1.3+ (also works with Node.js v18+)
+- [Bun](https://bun.sh) v1.3+ (also works with Node.js v22+)
 - A Shopify store with a Dev Dashboard app (see setup below)
 
 ## Setup
@@ -49,7 +49,9 @@ Bun loads `.env` automatically — no extra setup needed. shopq handles the OAut
 git clone https://github.com/c-99-e/shopq.git
 cd shopq
 bun install
-bun link
+
+# Run locally without affecting a global shopq install
+bun run bin/shopq.ts <command>
 ```
 
 ## Usage
