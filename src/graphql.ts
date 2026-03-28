@@ -47,59 +47,11 @@ export class ConfigError extends Error {
 	constructor(public missing: string[]) {
 		super(
 			`Missing required environment variables: ${missing.join(", ")}\n` +
-				`Set them in ~/.config/shopq/.env, a local .env file, or as environment variables.`,
+				`Set them in a .env file or as environment variables.`,
 		);
 		this.name = "ConfigError";
 	}
 }
-
-/**
- * Load env file without overriding existing env vars.
- * Real env vars and earlier-loaded files always win.
- */
-function loadEnvFile(filePath: string): void {
-	try {
-		const content = require("node:fs").readFileSync(
-			filePath,
-			"utf-8",
-		) as string;
-		for (const line of content.split("\n")) {
-			const trimmed = line.trim();
-			if (!trimmed || trimmed.startsWith("#")) continue;
-			const eqIdx = trimmed.indexOf("=");
-			if (eqIdx === -1) continue;
-			const key = trimmed.slice(0, eqIdx).trim();
-			const value = trimmed
-				.slice(eqIdx + 1)
-				.trim()
-				.replace(/^["']|["']$/g, "");
-			if (!(key in process.env)) {
-				process.env[key] = value;
-			}
-		}
-	} catch {
-		// File doesn't exist — that's fine
-	}
-}
-
-/**
- * Load env vars with precedence: real env > CWD .env > ~/.config/shopq/.env
- * This follows the pattern used by gh, vercel, railway, etc.
- */
-function loadConfigEnv(): void {
-	const xdgConfig =
-		process.env.XDG_CONFIG_HOME ||
-		`${process.env.HOME || require("node:os").homedir()}/.config`;
-
-	// 1. Load CWD .env first (higher priority, fills gaps in real env)
-	loadEnvFile(`${process.cwd()}/.env`);
-
-	// 2. Load ~/.config/shopq/.env as fallback defaults
-	loadEnvFile(`${xdgConfig}/shopq/.env`);
-}
-
-// Load on module init
-loadConfigEnv();
 
 export function resolveConfig(storeFlag?: string): {
 	store: string;
